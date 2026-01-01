@@ -6,243 +6,92 @@
     <title>شات الحرية المتكامل</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --main: #3ecf8e; --bg: #f0f2f5; --text: #333; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; color: var(--text); }
-        
-        /* شاشة تسجيل الدخول */
-        #auth-screen { position: fixed; inset: 0; background: white; z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .auth-box { width: 90%; max-width: 380px; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
-        
-        /* الواجهة الرئيسية */
-        #main-app { display: none; height: 100vh; grid-template-columns: 300px 1fr; }
-        .sidebar { background: white; border-left: 1px solid #ddd; display: flex; flex-direction: column; }
-        .chat-area { display: flex; flex-direction: column; background: #e5ddd5; position: relative; }
-
-        /* الملف الشخصي في الزاوية */
-        .profile-badge { position: fixed; top: 15px; left: 15px; background: var(--main); color: white; padding: 10px 18px; border-radius: 30px; cursor: pointer; font-weight: bold; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-
-        /* قائمة الأصدقاء */
-        .friends-container { flex: 1; overflow-y: auto; padding: 15px; }
-        .friend-card { padding: 15px; background: #f8f9fa; border-radius: 10px; margin-bottom: 10px; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
-        .friend-card:hover { border-color: var(--main); background: #f0fff8; }
-
-        /* الرسائل */
-        .messages-list { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
-        .message { padding: 10px 15px; border-radius: 15px; margin: 5px; max-width: 75%; font-size: 15px; line-height: 1.4; }
-        .sent { background: #dcf8c6; align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .received { background: white; align-self: flex-end; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-
-        /* المدخلات */
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 12px; background: var(--main); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
-        button:disabled { background: #ccc; }
-
-        /* النوافذ المنبثقة (Modals) */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; }
-        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 320px; text-align: center; }
-
-        @media (max-width: 700px) { #main-app { grid-template-columns: 1fr; } .sidebar { display: none; } }
+        :root { --main: #3ecf8e; --bg: #f0f2f5; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: var(--main); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #app { display: none; width: 100%; height: 100vh; background: white; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen">
-        <div class="auth-box">
-            <h1 style="color: var(--main);">شات الحرية</h1>
-            <p>موقع للدردشة المجانية. سجل دخولك للبدء</p>
-            <input type="email" id="auth-email" placeholder="البريد الإلكتروني">
-            <input type="password" id="auth-password" placeholder="كلمة المرور (6 أحرف فأكثر)">
-            <button id="auth-submit-btn" onclick="handleAuth()">دخول / إنشاء حساب</button>
-            <p id="auth-status" style="font-size: 12px; color: #666; margin-top: 10px;"></p>
-        </div>
+    <div id="auth-screen" class="box">
+        <h1>شات الحرية</h1>
+        <p>سجل دخولك للبدء</p>
+        <input type="email" id="email" placeholder="الإيميل">
+        <input type="password" id="password" placeholder="كلمة المرور">
+        <button id="login-btn" onclick="handleAuth()">دخول / تسجيل</button>
+        <p id="status-msg" style="color: red; font-size: 12px; margin-top: 10px;"></p>
     </div>
 
-    <div class="profile-badge" id="profile-btn" style="display:none" onclick="openModal('profile-modal')">👤 حسابي</div>
-
-    <div id="main-app">
-        <div class="sidebar">
-            <div style="padding: 20px; border-bottom: 1px solid #eee;">
-                <h3 style="margin:0 0 15px 0">المحادثات</h3>
-                <button onclick="openModal('add-friend-modal')">+ إضافة صديق عبر ID</button>
-            </div>
-            <div id="friends-list" class="friends-container">
-                <div style="color:#888; text-align:center; margin-top:30px">لا يوجد أصدقاء بعد</div>
-            </div>
-        </div>
-        
-        <div class="chat-area">
-            <div id="chat-welcome" style="flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#777">
-                <h2>أهلاً بك في الدردشة</h2>
-                <p>اختر صديقاً أو أضف مستخدم جديد عبر الـ ID الخاص به</p>
-            </div>
-
-            <div id="chat-box" style="display:none; flex:1; flex-direction:column; height: 100%;">
-                <div id="chat-header" style="background:white; padding:15px; font-weight:bold; border-bottom:1px solid #ddd"></div>
-                <div class="messages-list" id="messages-list"></div>
-                <div style="padding:15px; background:white; display:flex; border-top:1px solid #ddd">
-                    <input type="text" id="msg-input" placeholder="اكتب رسالتك..." style="margin:0 10px 0 0" onkeypress="if(event.key==='Enter') sendMessage()">
-                    <button onclick="sendMessage()" style="width:100px">إرسال</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="profile-modal" class="modal-overlay" onclick="closeModal(event)">
-        <div class="modal-content">
-            <h3>بيانات الحساب</h3>
-            <p style="font-size:14px; color:#666">الـ ID الخاص بك (شاركه مع أصدقائك):</p>
-            <div id="my-id-display" style="font-size:22px; font-weight:bold; color:var(--main); background:#f0fff8; padding:15px; border-radius:10px; border:2px dashed var(--main)">...</div>
-            <button onclick="logout()" style="background:#ff4d4d; margin-top:20px">تسجيل الخروج</button>
-        </div>
-    </div>
-
-    <div id="add-friend-modal" class="modal-overlay" onclick="closeModal(event)">
-        <div class="modal-content">
-            <h3>بدء محادثة جديدة</h3>
-            <p style="font-size:14px; color:#666">أدخل ID الشخص الذي تريد مراسلته:</p>
-            <input type="text" id="target-id-input" placeholder="مثال: ID-XXXXXX">
-            <button onclick="addNewFriend()">إضافة وبدء الدردشة</button>
-        </div>
+    <div id="main-app" class="hidden" style="text-align:center; padding:50px;">
+        <h2>مرحباً بك!</h2>
+        <div id="my-id" style="font-size:30px; font-weight:bold; color:var(--main); margin:20px; border:2px dashed; padding:20px;"></div>
+        <button onclick="logout()" style="background:red; width:200px;">تسجيل خروج</button>
     </div>
 
     <script>
+        // الربط مع Supabase
         const SUPABASE_URL = 'https://xrvkkhuukqxvuwscgcvh.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_FWznB9cBJHwv_yK0A3F79g_w7cCyNv-';
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let myData = null;
-        let activeChannel = null;
-        let friendsList = [];
-
-        // التحقق من حالة الدخول عند تحميل الصفحة
+        // مراقبة حالة الدخول فور تحميل الصفحة
         supabase.auth.onAuthStateChange((event, session) => {
             if (session) {
-                initApp(session.user);
-            } else {
-                showAuthScreen();
+                showApp(session.user);
             }
         });
 
         async function handleAuth() {
-            const email = document.getElementById('auth-email').value.trim();
-            const password = document.getElementById('auth-password').value.trim();
-            const status = document.getElementById('auth-status');
-            const btn = document.getElementById('auth-submit-btn');
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const btn = document.getElementById('login-btn');
+            const status = document.getElementById('status-msg');
 
-            if (!email || password.length < 6) return alert("أدخل بيانات صحيحة");
+            if (!email || !password) return alert("اكمل البيانات");
 
             btn.disabled = true;
-            status.innerText = "جاري الاتصال بالسيرفر...";
+            btn.innerText = "جاري الاتصال...";
 
-            // 1. محاولة تسجيل الدخول
-            const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+            try {
+                // محاولة تسجيل الدخول
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-            if (loginError) {
-                status.innerText = "جاري إنشاء حساب جديد...";
-                // 2. إذا لم ينجح، نحاول إنشاء حساب
-                const { error: signUpError } = await supabase.auth.signUp({ email, password });
-                
-                if (signUpError) {
-                    alert("خطأ: " + signUpError.message);
-                    btn.disabled = false;
-                    status.innerText = "";
+                if (error) {
+                    // إذا لم يجد حساب، ينشئ واحد جديد
+                    const { error: signUpError } = await supabase.auth.signUp({ email, password });
+                    if (signUpError) throw signUpError;
+                    alert("تم إنشاء حسابك! اضغط دخول مرة أخرى.");
                 } else {
-                    alert("تم إنشاء حسابك! الآن أدخل بياناتك مرة أخرى للدخول.");
-                    btn.disabled = false;
+                    showApp(data.user);
                 }
+            } catch (err) {
+                alert("حدث خطأ: " + err.message);
+                status.innerText = err.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "دخول / تسجيل";
             }
         }
 
-        async function initApp(user) {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('main-app').style.display = 'grid';
-            document.getElementById('profile-btn').style.display = 'block';
-
-            // جلب بيانات الملف الشخصي من SQL
-            const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        async function showApp(user) {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
             
+            // جلب الـ ID من قاعدة البيانات
+            const { data } = await supabase.from('profiles').select('display_id').eq('id', user.id).single();
             if (data) {
-                myData = data;
-                document.getElementById('my-id-display').innerText = data.display_id;
-            } else {
-                console.error("لم يتم العثور على ملف شخصي، هل قمت بتشغيل كود SQL؟");
+                document.getElementById('my-id').innerText = "ID: " + data.display_id;
             }
         }
 
-        function addNewFriend() {
-            const id = document.getElementById('target-id-input').value.trim().toUpperCase();
-            if (id && id !== myData.display_id) {
-                if (!friendsList.includes(id)) {
-                    friendsList.push(id);
-                    renderFriends();
-                }
-                closeAllModals();
-                startChat(id);
-            } else {
-                alert("ID غير صالح");
-            }
+        async function logout() {
+            await supabase.auth.signOut();
+            location.reload();
         }
-
-        function renderFriends() {
-            const container = document.getElementById('friends-list');
-            container.innerHTML = '';
-            friendsList.forEach(id => {
-                const div = document.createElement('div');
-                div.className = 'friend-card';
-                div.innerHTML = `<strong>👤 ${id}</strong>`;
-                div.onclick = () => startChat(id);
-                container.appendChild(div);
-            });
-        }
-
-        async function startChat(friendID) {
-            if (activeChannel) activeChannel.unsubscribe();
-
-            document.getElementById('chat-welcome').style.display = 'none';
-            document.getElementById('chat-box').style.display = 'flex';
-            document.getElementById('chat-header').innerText = "محادثة مع: " + friendID;
-            document.getElementById('messages-list').innerHTML = '';
-
-            // إنشاء قناة فريدة للطرفين
-            const roomID = [myData.display_id, friendID].sort().join('--');
-            activeChannel = supabase.channel(roomID);
-
-            activeChannel
-                .on('broadcast', { event: 'shat_msg' }, (payload) => {
-                    addMessageToUI(payload.payload.text, 'received');
-                })
-                .subscribe();
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('msg-input');
-            const text = input.value.trim();
-            if (text && activeChannel) {
-                activeChannel.send({
-                    type: 'broadcast',
-                    event: 'shat_msg',
-                    payload: { text: text }
-                });
-                addMessageToUI(text, 'sent');
-                input.value = '';
-            }
-        }
-
-        function addMessageToUI(text, type) {
-            const list = document.getElementById('messages-list');
-            const div = document.createElement('div');
-            div.className = `message ${type}`;
-            div.innerText = text;
-            list.appendChild(div);
-            list.scrollTop = list.scrollHeight;
-        }
-
-        // وظائف النوافذ
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
-        function closeModal(e) { if(e.target.classList.contains('modal-overlay')) closeAllModals(); }
-        async function logout() { await supabase.auth.signOut(); location.reload(); }
-        function showAuthScreen() { document.getElementById('auth-screen').style.display = 'flex'; }
     </script>
 </body>
 </html>
