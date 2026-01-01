@@ -3,197 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شات الحرية - النسخة النهائية</title>
+    <title>شات الحرية - نظام الطلبات</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --main: #3ecf8e; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; overflow: hidden; height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; height: 100vh; overflow: hidden; }
         #auth-screen { position: fixed; inset: 0; background: white; z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .auth-box { width: 90%; max-width: 350px; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
         #main-app { display: none; height: 100vh; grid-template-columns: 300px 1fr; }
         .sidebar { background: white; border-left: 1px solid #ddd; display: flex; flex-direction: column; }
         .chat-area { display: flex; flex-direction: column; background: #e5ddd5; position: relative; }
-        .profile-btn { position: fixed; top: 15px; left: 15px; background: var(--main); color: white; padding: 10px 15px; border-radius: 30px; cursor: pointer; font-weight: bold; z-index: 99; border: none; }
-        .friend-item { padding: 15px; background: #f9f9f9; margin: 10px; border-radius: 10px; cursor: pointer; border: 1px solid #eee; text-align: center; font-weight: bold; transition: 0.3s; }
-        .friend-item:hover { background: #f0fff8; border-color: var(--main); }
+        .request-item { background: #fff3cd; padding: 10px; margin: 5px; border-radius: 8px; border: 1px solid #ffeeba; font-size: 13px; }
+        .friend-item { padding: 15px; background: #f9f9f9; margin: 5px; border-radius: 10px; cursor: pointer; border: 1px solid #eee; font-weight: bold; }
         .messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
-        .msg { padding: 10px 15px; border-radius: 15px; margin: 5px; max-width: 70%; word-wrap: break-word; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .msg { padding: 10px 15px; border-radius: 15px; margin: 5px; max-width: 70%; font-size: 14px; }
         .sent { background: #dcf8c6; align-self: flex-start; }
         .received { background: white; align-self: flex-end; }
-        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        button { background: var(--main); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 2000; }
         .modal-content { background: white; padding: 20px; border-radius: 15px; width: 300px; text-align: center; }
+        button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
+        .btn-main { background: var(--main); color: white; padding: 10px; width: 100%; }
         @media (max-width: 700px) { #main-app { grid-template-columns: 1fr; } .sidebar { display: none; } }
     </style>
 </head>
 <body>
 
     <div id="auth-screen">
-        <div class="auth-box">
+        <div style="width: 90%; max-width: 350px; text-align: center;">
             <h1 style="color:var(--main)">شات الحرية</h1>
-            <input type="email" id="email" placeholder="الإيميل">
-            <input type="password" id="password" placeholder="كلمة المرور">
-            <button onclick="handleAuth()">دخول / تسجيل</button>
+            <input type="email" id="email" placeholder="الإيميل" style="width:100%; padding:10px; margin:5px 0;">
+            <input type="password" id="password" placeholder="كلمة المرور" style="width:100%; padding:10px; margin:5px 0;">
+            <button onclick="handleAuth()" class="btn-main">دخول / تسجيل</button>
         </div>
     </div>
 
-    <button class="profile-btn" id="p-btn" style="display:none" onclick="toggleModal('profile-modal')">👤 حسابي</button>
-
     <div id="main-app">
         <div class="sidebar">
-            <div style="padding: 20px; border-bottom: 1px solid #eee;">
-                <h3>المحادثات</h3>
-                <button onclick="toggleModal('add-friend-modal')">+ إضافة صديق</button>
+            <div style="padding: 15px; border-bottom: 1px solid #eee;">
+                <button onclick="toggleModal('profile-modal')" style="background:#eee; padding:5px 10px; margin-bottom:10px;">👤 ملفي</button>
+                <button onclick="toggleModal('add-modal')" class="btn-main">+ طلب محادثة جديد</button>
             </div>
-            <div id="friends-list" style="flex:1; overflow-y:auto;"></div>
+            
+            <div id="requests-list" style="max-height: 150px; overflow-y: auto; border-bottom: 2px solid #eee;"></div>
+            
+            <div id="friends-list" style="flex:1; overflow-y:auto; padding-top:10px;"></div>
         </div>
         
         <div class="chat-area" id="chat-window" style="display:none">
             <div id="chat-header" style="background:white; padding:15px; font-weight:bold; border-bottom:1px solid #ddd"></div>
             <div class="messages" id="messages-box"></div>
-            <div style="padding:15px; background:white; display:flex; border-top:1px solid #ddd">
-                <input type="text" id="msg-input" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()" style="width:80px; margin-right:10px">إرسال</button>
+            <div style="padding:15px; background:white; display:flex;">
+                <input type="text" id="msg-input" placeholder="اكتب رسالة..." style="flex:1; padding:10px;" onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()" style="padding:10px 20px; background:var(--main); color:white; margin-right:5px;">إرسال</button>
             </div>
         </div>
-        <div id="no-chat" style="flex:1; display:flex; align-items:center; justify-content:center; color:gray; flex-direction:column">
-            <h2>أهلاً بك في شات الحرية</h2>
-            <p>اختر صديقاً من القائمة الجانبية للبدء</p>
-        </div>
+        <div id="no-chat" style="flex:1; display:flex; align-items:center; justify-content:center; color:gray;">اختر محادثة للبدء</div>
     </div>
 
     <div id="profile-modal" class="modal" onclick="closeModal(event)">
         <div class="modal-content">
-            <h3>بياناتك</h3>
-            <p>ID الخاص بك للارسال للاصدقاء:</p>
-            <div id="display-id" style="font-size:22px; font-weight:bold; color:var(--main); background:#f0fff8; padding:10px; border:2px dashed;">...</div>
-            <button onclick="logout()" style="background:#ff4d4d; margin-top:15px">تسجيل خروج</button>
+            <h3>ID الخاص بك:</h3>
+            <div id="my-id-val" style="font-size:20px; font-weight:bold; color:var(--main); padding:10px; border:2px dashed; margin:10px 0;">...</div>
+            <button onclick="logout()" style="background:red; color:white; padding:10px; width:100%;">خروج</button>
         </div>
     </div>
 
-    <div id="add-friend-modal" class="modal" onclick="closeModal(event)">
+    <div id="add-modal" class="modal" onclick="closeModal(event)">
         <div class="modal-content">
-            <h3>إضافة صديق جديد</h3>
-            <input type="text" id="friend-id-input" placeholder="أدخل ID الصديق">
-            <button onclick="addFriend()">إضافة وبدء الشات</button>
+            <h3>إرسال طلب دردشة</h3>
+            <input type="text" id="target-id" placeholder="أدخل ID الشخص" style="width:100%; padding:10px; margin-bottom:10px;">
+            <button onclick="sendRequest()" class="btn-main">إرسال الطلب</button>
         </div>
     </div>
 
 <script>
     const SUPABASE_URL = 'https://xrvkkhuukqxvuwscgcvh.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_FWznB9cBJHwv_yK0A3F79g_w7cCyNv-';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let myProfile = null;
+    let activeChat = null;
     let activeChannel = null;
-    let friends = [];
 
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (session) setupApp(session.user);
-        else document.getElementById('auth-screen').style.display = 'flex';
+    supabase.auth.onAuthStateChange((ev, session) => {
+        if (session) initApp(session.user);
     });
 
     async function handleAuth() {
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value.trim();
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-            const { error: sError } = await supabaseClient.auth.signUp({ email, password });
-            if (sError) alert("خطأ: " + sError.message);
-            else alert("تم إنشاء الحساب! سجل دخولك الآن بنفس البيانات.");
+            const { error: sError } = await supabase.auth.signUp({ email, password });
+            if (sError) alert(sError.message); else alert("تم التسجيل، ادخل الآن");
         }
     }
 
-    async function setupApp(user) {
+    async function initApp(user) {
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'grid';
-        document.getElementById('p-btn').style.display = 'block';
+        
+        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        myProfile = data;
+        document.getElementById('my-id-val').innerText = data.display_id;
 
-        const { data } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-        if (data) {
-            myProfile = data;
-            document.getElementById('display-id').innerText = data.display_id;
-            friends = data.friends || [];
-            updateFriendsUI();
-        }
-
-        // الاستماع الفوري لأي تحديث في ملفك (عندما يضيفك صديق)
-        supabaseClient.channel('realtime_profiles').on('postgres_changes', 
-            { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` }, 
-            payload => {
-                friends = payload.new.friends || [];
-                updateFriendsUI();
-            }).subscribe();
+        loadData();
+        
+        // استماع فوري لأي طلبات جديدة أو تحديثات
+        supabase.channel('db_changes').on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, () => loadData()).subscribe();
     }
 
-    async function addFriend() {
-        const fID = document.getElementById('friend-id-input').value.trim().toUpperCase();
-        if (!fID || fID === myProfile.display_id) return alert("ID غير صالح");
+    async function loadData() {
+        // جلب الطلبات الواردة (معلقة)
+        const { data: reqs } = await supabase.from('chats').select('*').eq('receiver_id', myProfile.display_id).eq('status', 'pending');
+        renderRequests(reqs);
 
-        const { data: friendData } = await supabaseClient.from('profiles').select('*').eq('display_id', fID).single();
-        if (!friendData) return alert("هذا المستخدم غير موجود");
-
-        // تحديث قائمتي
-        const myNewList = [...new Set([...friends, fID])];
-        await supabaseClient.from('profiles').update({ friends: myNewList }).eq('id', myProfile.id);
-
-        // تحديث قائمة الصديق ليظهر عندي وعنده
-        const hisNewList = [...new Set([...(friendData.friends || []), myProfile.display_id])];
-        await supabaseClient.from('profiles').update({ friends: hisNewList }).eq('id', friendData.id);
-
-        toggleModal('add-friend-modal');
-        startChat(fID);
+        // جلب المحادثات المقبولة (كنت أنا المرسل أو المستلم)
+        const { data: friends } = await supabase.from('chats')
+            .select('*')
+            .eq('status', 'accepted')
+            .or(`sender_id.eq.${myProfile.display_id},receiver_id.eq.${myProfile.display_id}`);
+        renderFriends(friends);
     }
 
-    function updateFriendsUI() {
-        const list = document.getElementById('friends-list');
-        list.innerHTML = friends.length ? '' : '<p style="text-align:center;color:gray;margin-top:20px">لا يوجد أصدقاء</p>';
-        friends.forEach(fID => {
-            const div = document.createElement('div');
-            div.className = 'friend-item';
-            div.innerText = "👤 " + fID;
-            div.onclick = () => startChat(fID);
-            list.appendChild(div);
+    function renderRequests(list) {
+        const div = document.getElementById('requests-list');
+        div.innerHTML = list?.length ? '<p style="font-size:12px; padding:5px;">طلبات واردة:</p>' : '';
+        list?.forEach(r => {
+            div.innerHTML += `<div class="request-item">
+                طلب من: ${r.sender_id}
+                <button onclick="respond('${r.id}', 'accepted')" style="background:green; color:white; padding:2px 5px;">قبول</button>
+            </div>`;
         });
+    }
+
+    function renderFriends(list) {
+        const div = document.getElementById('friends-list');
+        div.innerHTML = '';
+        list?.forEach(f => {
+            const otherID = f.sender_id === myProfile.display_id ? f.receiver_id : f.sender_id;
+            const item = document.createElement('div');
+            item.className = 'friend-item';
+            item.innerText = "👤 " + otherID;
+            item.onclick = () => startChat(otherID);
+            div.appendChild(item);
+        });
+    }
+
+    async function sendRequest() {
+        const target = document.getElementById('target-id').value.toUpperCase();
+        if (target === myProfile.display_id) return alert("لا يمكنك مراسلة نفسك");
+        
+        const { error } = await supabase.from('chats').insert([{ sender_id: myProfile.display_id, receiver_id: target }]);
+        if (error) alert("خطأ في الإرسال"); else { alert("تم إرسال الطلب بنجاح"); toggleModal('add-modal'); }
+    }
+
+    async function respond(chatId, newStatus) {
+        await supabase.from('chats').update({ status: newStatus }).eq('id', chatId);
+        loadData();
     }
 
     async function startChat(friendID) {
         if (activeChannel) activeChannel.unsubscribe();
         document.getElementById('no-chat').style.display = 'none';
         document.getElementById('chat-window').style.display = 'flex';
-        document.getElementById('chat-header').innerText = "محادثة مع: " + friendID;
+        document.getElementById('chat-header').innerText = "دردشة مع: " + friendID;
         document.getElementById('messages-box').innerHTML = '';
 
-        const room = [myProfile.display_id, friendID].sort().join('--');
-        activeChannel = supabaseClient.channel(room);
+        const roomID = [myProfile.display_id, friendID].sort().join('--');
+        activeChannel = supabase.channel(roomID);
         activeChannel.on('broadcast', { event: 'msg' }, p => renderMsg(p.payload.text, 'received')).subscribe();
     }
 
     function sendMessage() {
-        const input = document.getElementById('msg-input');
-        if (input.value.trim() && activeChannel) {
-            activeChannel.send({ type: 'broadcast', event: 'msg', payload: { text: input.value } });
-            renderMsg(input.value, 'sent');
-            input.value = '';
+        const inp = document.getElementById('msg-input');
+        if (inp.value && activeChannel) {
+            activeChannel.send({ type: 'broadcast', event: 'msg', payload: { text: inp.value } });
+            renderMsg(inp.value, 'sent');
+            inp.value = '';
         }
     }
 
-    function renderMsg(text, type) {
-        const div = document.createElement('div');
-        div.className = `msg ${type}`;
-        div.innerText = text;
-        const box = document.getElementById('messages-box');
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
+    function renderMsg(t, type) {
+        const d = document.createElement('div');
+        d.className = `msg ${type}`;
+        d.innerText = t;
+        document.getElementById('messages-box').appendChild(d);
+        document.getElementById('messages-box').scrollTop = 99999;
     }
 
-    function toggleModal(id) {
-        const m = document.getElementById(id);
-        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    function toggleModal(id) { 
+        const m = document.getElementById(id); 
+        m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; 
     }
-    function closeModal(e) { if(e.target.className === 'modal') e.target.style.display = 'none'; }
-    async function logout() { await supabaseClient.auth.signOut(); location.reload(); }
+    function closeModal(e) { if(e.target.className==='modal') e.target.style.display='none'; }
+    async function logout() { await supabase.auth.signOut(); location.reload(); }
 </script>
 </body>
 </html>
