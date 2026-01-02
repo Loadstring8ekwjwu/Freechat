@@ -6,85 +6,121 @@
     <title>شات الحرية Pro</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
+        /* تعريف المتغيرات للألوان */
         :root { 
-            --main: #25d366; --bg: #ece5dd; --header: #075e54; --sent: #dcf8c6; --text: #000; --card: #fff;
+            --main: #25d366; --bg: #ece5dd; --header: #075e54; --sent: #dcf8c6; 
+            --text: #000; --card: #ffffff; --subtext: #666;
         }
-        /* الوضع الليلي */
         body.dark { 
-            --bg: #0b141a; --header: #202c33; --sent: #005c4b; --text: #fff; --card: #111b21; 
+            --bg: #0b141a; --header: #202c33; --sent: #005c4b; 
+            --text: #ffffff; --card: #111b21; --subtext: #aebac1;
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: sans-serif; background: var(--card); color: var(--text); height: 100vh; overflow: hidden; transition: 0.3s; }
+        body { font-family: -apple-system, sans-serif; background: var(--card); color: var(--text); height: 100vh; overflow: hidden; transition: background 0.3s; }
 
+        /* الهيكل الرئيسي */
         #main-app { display: none; height: 100vh; width: 100%; position: relative; }
-        #friends-page, #chat-page { height: 100%; width: 100%; position: absolute; transition: 0.3s; display: flex; flex-direction: column; }
         
-        .header { background: var(--header); color: white; padding: 15px; padding-top: calc(15px + env(safe-area-inset-top)); display: flex; align-items: center; gap: 10px; z-index: 100; }
-        .status-dot { width: 10px; height: 10px; background: #bbb; border-radius: 50%; display: inline-block; }
-        .online { background: var(--main); }
+        .page { height: 100%; width: 100%; position: absolute; top: 0; left: 0; display: flex; flex-direction: column; background: var(--card); }
 
-        #messages-box { flex: 1; overflow-y: auto; padding: 15px; background: var(--bg); display: flex; flex-direction: column; gap: 8px; }
-        .msg { padding: 8px 12px; border-radius: 10px; max-width: 80%; font-size: 16px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); color: #000; }
-        .sent { background: var(--sent); align-self: flex-start; }
-        .received { background: #fff; align-self: flex-end; }
-        body.dark .received { background: #202c33; color: #fff; }
+        /* الهيدر */
+        .header { 
+            background: var(--header); color: white; 
+            padding: 15px; padding-top: calc(15px + env(safe-area-inset-top)); 
+            display: flex; align-items: center; justify-content: space-between; gap: 10px; z-index: 100; 
+        }
 
-        .input-area { background: var(--header); padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 8px; align-items: center; }
-        #msg-input { flex: 1; border-radius: 25px; border: none; padding: 12px 15px; font-size: 16px; outline: none; }
+        /* منطقة الرسائل */
+        #messages-box { flex: 1; overflow-y: auto; padding: 15px; background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px 14px; border-radius: 12px; max-width: 85%; font-size: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-wrap: break-word; color: #000; }
+        .sent { background: var(--sent); align-self: flex-start; border-top-right-radius: 2px; }
+        .received { background: #ffffff; align-self: flex-end; border-top-left-radius: 2px; }
+        body.dark .received { background: #202c33; color: white; }
+
+        /* شريط الإدخال */
+        .input-area { 
+            background: var(--header); 
+            padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); 
+            display: flex; gap: 8px; align-items: center; 
+        }
+        #msg-input { flex: 1; border-radius: 25px; border: none; padding: 12px 18px; font-size: 16px; outline: none; background: #fff; }
+
+        /* قائمة الأصدقاء */
+        .friend-item { padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.2); display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .avatar { width: 50px; height: 50px; background: #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .friend-info { flex: 1; }
+        .friend-name { font-weight: bold; font-size: 17px; }
+        .typing-status { font-size: 13px; color: var(--main); display: none; font-weight: 500; }
+
+        /* الأزرار */
+        .btn-round { background: none; border: none; color: white; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .primary-btn { background: var(--main); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 16px; cursor: pointer; }
+
+        /* المودال */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 20px; }
+        .modal-content { background: var(--card); color: var(--text); padding: 25px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; }
         
-        .friend-item { padding: 15px; border-bottom: 1px solid #33333322; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .typing-text { font-size: 12px; color: var(--main); font-weight: bold; display: none; }
-        
-        .btn-round { width: 45px; height: 45px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        
-        /* إشعار الكتابة */
-        #typing-indicator { font-size: 12px; color: #fff; opacity: 0.8; }
+        .media-content { width: 100%; border-radius: 10px; margin-top: 5px; max-height: 280px; object-fit: cover; }
     </style>
 </head>
-<body class="">
+<body>
 
-    <div id="auth-screen" style="position:fixed; inset:0; background:white; z-index:3000; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
-        <h2>شات الحرية Pro</h2>
-        <input type="email" id="auth-email" placeholder="البريد الإلكتروني">
-        <input type="password" id="auth-password" placeholder="كلمة المرور">
-        <button onclick="handleAuth()" style="width:100%; padding:15px; background:var(--header); color:white; border:none; border-radius:10px;">دخول</button>
+    <div id="auth-screen" style="position:fixed; inset:0; background:white; z-index:5000; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:30px;">
+        <h1 style="color:var(--header); margin-bottom:10px;">شات الحرية</h1>
+        <p style="color:#666; margin-bottom:30px;">تواصل بخصوصية تامة</p>
+        <input type="email" id="auth-email" placeholder="البريد الإلكتروني" style="width:100%; padding:15px; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
+        <input type="password" id="auth-password" placeholder="كلمة المرور" style="width:100%; padding:15px; border:1px solid #ddd; border-radius:10px; margin-bottom:20px;">
+        <button onclick="handleAuth()" class="primary-btn">دخول / تسجيل</button>
     </div>
 
     <div id="main-app">
-        <div id="friends-page">
+        <div id="friends-page" class="page">
             <div class="header">
-                <span>المحادثات</span>
-                <button onclick="toggleDarkMode()" class="btn-round" style="background:none; margin-right:auto;">🌙</button>
-                <button onclick="logout()" class="btn-round" style="background:none;">🚪</button>
+                <button onclick="toggleModal('profile-modal')" class="btn-round">👤</button>
+                <span>شات الحرية</span>
+                <button onclick="toggleDarkMode()" class="btn-round" id="theme-icon">🌙</button>
             </div>
-            <div style="padding:10px;"><button onclick="toggleModal('add-modal')" style="width:100%; padding:12px; border-radius:10px; border:none; background:var(--main); color:white; font-weight:bold;">+ إضافة صديق</button></div>
+            <div id="requests-area"></div>
+            <div style="padding: 15px;">
+                <button onclick="toggleModal('add-modal')" class="primary-btn">+ إضافة صديق جديد</button>
+            </div>
             <div id="friends-list" style="flex:1; overflow-y:auto;"></div>
         </div>
 
-        <div id="chat-page" style="display:none;">
+        <div id="chat-page" class="page" style="display:none; z-index:200;">
             <div class="header">
-                <button onclick="closeChat()" style="background:none; border:none; color:white; font-size:24px;">❮</button>
-                <div>
-                    <div id="chat-title">...</div>
-                    <div id="typing-indicator"></div>
+                <button onclick="closeChat()" class="btn-round">❮</button>
+                <div style="flex:1; text-align:center;">
+                    <div id="chat-title" style="font-size:17px;">...</div>
+                    <div id="typing-indicator" style="font-size:12px; opacity:0.8; height:14px;"></div>
                 </div>
+                <div style="width:30px;"></div>
             </div>
             <div id="messages-box"></div>
             <div class="input-area">
                 <input type="file" id="file-input" style="display:none" accept="image/*,video/*" onchange="uploadFile(this)">
-                <button onclick="document.getElementById('file-input').click()" class="btn-round" style="background:none; color:white;">📎</button>
-                <input type="text" id="msg-input" placeholder="اكتب رسالة..." oninput="updateTypingStatus(true)" onblur="updateTypingStatus(false)">
-                <button onclick="sendMessage()" class="btn-round" style="background:var(--main); color:white;">➤</button>
+                <button onclick="document.getElementById('file-input').click()" class="btn-round">📎</button>
+                <input type="text" id="msg-input" placeholder="اكتب رسالة..." autocomplete="off" oninput="updateTypingStatus(true)" onblur="updateTypingStatus(false)">
+                <button onclick="sendMessage()" class="btn-round" style="background:var(--main); width:40px; height:40px; border-radius:50%;">➤</button>
             </div>
         </div>
     </div>
 
-    <div id="add-modal" class="modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:4000;" onclick="if(event.target===this) this.style.display='none'">
-        <div style="background:var(--card); padding:20px; border-radius:15px; width:80%;">
-            <h3>إضافة صديق</h3>
-            <input type="text" id="target-id" placeholder="ID الصديق">
-            <button onclick="sendChatRequest()" style="width:100%; padding:10px; background:var(--main); color:white; border:none; border-radius:5px;">إرسال</button>
+    <div id="profile-modal" class="modal" onclick="if(event.target===this) toggleModal('profile-modal')">
+        <div class="modal-content">
+            <h3 style="margin-bottom:15px;">ملفي الشخصي</h3>
+            <p style="font-size:14px; opacity:0.7;">معرفك الخاص (ID):</p>
+            <div id="my-display-id" style="font-size:24px; font-weight:bold; color:var(--main); margin:15px 0; background:rgba(0,0,0,0.05); padding:10px; border-radius:10px;">...</div>
+            <button onclick="logout()" style="background:#ff4d4d; color:white; border:none; padding:12px; width:100%; border-radius:10px; font-weight:bold;">تسجيل الخروج</button>
+        </div>
+    </div>
+
+    <div id="add-modal" class="modal" onclick="if(event.target===this) toggleModal('add-modal')">
+        <div class="modal-content">
+            <h3 style="margin-bottom:15px;">طلب صداقة</h3>
+            <input type="text" id="target-id" placeholder="أدخل ID الطرف الآخر" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:10px; margin-bottom:15px;">
+            <button onclick="sendChatRequest()" class="primary-btn">إرسال الطلب</button>
         </div>
     </div>
 
@@ -99,34 +135,59 @@
 
     supabaseClient.auth.onAuthStateChange((ev, session) => {
         if (session) initApp(session.user);
+        else document.getElementById('auth-screen').style.display = 'flex';
     });
+
+    async function handleAuth() {
+        const e = document.getElementById('auth-email').value, p = document.getElementById('auth-password').value;
+        const { error } = await supabaseClient.auth.signInWithPassword({ email: e, password: p });
+        if (error) {
+            const { error: se } = await supabaseClient.auth.signUp({ email: e, password: p });
+            if (se) alert("خطأ: " + se.message);
+        }
+    }
 
     async function initApp(user) {
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
         let { data: p } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
         myProfile = p;
+        document.getElementById('my-display-id').innerText = p.display_id;
         loadDashboard();
         setInterval(loadDashboard, 3000);
-        updateOnlineStatus();
-        setInterval(updateOnlineStatus, 10000);
+        // استعادة السمة المفضلة
+        if(localStorage.getItem('theme') === 'dark') toggleDarkMode();
     }
 
     async function loadDashboard() {
+        // الطلبات الواردة
+        const { data: reqs } = await supabaseClient.from('chats').select('*').eq('receiver_id', myProfile.display_id).eq('status', 'pending');
+        const ra = document.getElementById('requests-area'); ra.innerHTML = '';
+        reqs?.forEach(r => {
+            ra.innerHTML += `<div style="background:#fff3cd; padding:10px; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
+                <span>طلب من: ${r.sender_id}</span>
+                <button onclick="respond('${r.id}')" style="background:green; color:white; border:none; padding:5px 10px; border-radius:5px;">قبول</button>
+            </div>`;
+        });
+
+        // قائمة الأصدقاء
         const { data: active } = await supabaseClient.from('chats').select('*').eq('status', 'accepted').or(`sender_id.eq.${myProfile.display_id},receiver_id.eq.${myProfile.display_id}`);
         const fl = document.getElementById('friends-list'); fl.innerHTML = '';
         active?.forEach(f => {
             const other = f.sender_id === myProfile.display_id ? f.receiver_id : f.sender_id;
             const isTyping = f.typing_id === other;
-            fl.innerHTML += `
-                <div class="friend-item" onclick="openChat('${other}', '${f.id}')">
-                    <div class="avatar" style="width:40px; height:40px; background:#ddd; border-radius:50%; margin-left:10px;"></div>
-                    <div style="flex:1">
-                        <b>${other}</b>
-                        <div style="color:var(--main); font-size:12px; display:${isTyping?'block':'none'}">يكتب الآن...</div>
-                    </div>
-                    <button onclick="event.stopPropagation(); deleteFriend('${f.id}')" style="background:none; border:none;">🗑️</button>
-                </div>`;
+            const div = document.createElement('div');
+            div.className = 'friend-item';
+            div.innerHTML = `
+                <div class="avatar">👤</div>
+                <div class="friend-info">
+                    <div class="friend-name">${other}</div>
+                    <div class="typing-status" style="display:${isTyping?'block':'none'}">يكتب الآن...</div>
+                </div>
+                <button onclick="event.stopPropagation(); deleteFriend('${f.id}')" style="background:none; border:none; color:red; font-size:18px;">🗑️</button>
+            `;
+            div.onclick = () => openChat(other, f.id);
+            fl.appendChild(div);
         });
     }
 
@@ -143,6 +204,7 @@
         document.getElementById('chat-page').style.display = 'none'; 
         document.getElementById('friends-page').style.display = 'flex'; 
         clearInterval(chatTimer); updateTypingStatus(false);
+        currentChatID = null;
     }
 
     async function fetchMsgs() {
@@ -150,23 +212,25 @@
         const room = [myProfile.display_id, currentFriendID].sort().join('--');
         const { data: msgs } = await supabaseClient.from('messages').select('*').eq('room_id', room).order('created_at', { ascending: true });
         
-        // ميزة صوت الإشعار
-        if (msgs && msgs.length > lastCount) {
+        if (msgs && msgs.length !== lastCount) {
             if (lastCount !== 0 && msgs[msgs.length-1].sender_id !== myProfile.display_id) {
-                document.getElementById('notif-sound').play();
+                document.getElementById('notif-sound').play().catch(()=>{});
             }
             const b = document.getElementById('messages-box'); b.innerHTML = '';
             msgs.forEach(m => {
                 const d = document.createElement('div');
                 d.className = `msg ${m.sender_id === myProfile.display_id ? 'sent' : 'received'}`;
-                d.innerText = m.text;
-                if(m.file_url) d.innerHTML += m.file_type==='image' ? `<img src="${m.file_url}" class="media-content">` : `<video src="${m.file_url}" controls class="media-content"></video>`;
+                if (m.text) d.innerHTML += `<div>${m.text}</div>`;
+                if (m.file_url) {
+                    if (m.file_type === 'image') d.innerHTML += `<img src="${m.file_url}" class="media-content" onclick="window.open('${m.file_url}')">`;
+                    else d.innerHTML += `<video src="${m.file_url}" controls class="media-content"></video>`;
+                }
                 b.appendChild(d);
             });
             lastCount = msgs.length; b.scrollTop = b.scrollHeight;
         }
 
-        // ميزة "يكتب الآن"
+        // تحديث مؤشر الكتابة
         const { data: chatData } = await supabaseClient.from('chats').select('typing_id').eq('id', currentChatID).single();
         document.getElementById('typing-indicator').innerText = chatData?.typing_id === currentFriendID ? 'يكتب الآن...' : '';
     }
@@ -176,13 +240,10 @@
         await supabaseClient.from('chats').update({ typing_id: isTyping ? myProfile.display_id : '' }).eq('id', currentChatID);
     }
 
-    async function updateOnlineStatus() {
-        await supabaseClient.from('profiles').update({ last_seen: new Date() }).eq('id', myProfile.id);
-    }
-
     function toggleDarkMode() {
-        document.body.classList.toggle('dark');
-        localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        const isDark = document.body.classList.toggle('dark');
+        document.getElementById('theme-icon').innerText = isDark ? '☀️' : '🌙';
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }
 
     async function sendMessage() {
@@ -195,13 +256,35 @@
         }
     }
 
-    // (بقية الوظائف الأساسية للحذف والإضافة والرفع كما هي في الكود السابق)
-    async function handleAuth() {
-        const e = document.getElementById('auth-email').value, p = document.getElementById('auth-password').value;
-        const { error } = await supabaseClient.auth.signInWithPassword({ email: e, password: p });
-        if (error) await supabaseClient.auth.signUp({ email: e, password: p });
+    async function uploadFile(input) {
+        const file = input.files[0]; if (!file) return;
+        const path = `media/${Date.now()}_${file.name}`;
+        const { data } = await supabaseClient.storage.from('media').upload(path, file);
+        if (data) {
+            const { data: urlData } = supabaseClient.storage.from('media').getPublicUrl(path);
+            const type = file.type.startsWith('image') ? 'image' : 'video';
+            const room = [myProfile.display_id, currentFriendID].sort().join('--');
+            await supabaseClient.from('messages').insert([{ room_id: room, sender_id: myProfile.display_id, text: '', file_url: urlData.publicUrl, file_type: type }]);
+            fetchMsgs();
+        }
     }
-    async function deleteFriend(id) { if(confirm("حذف؟")) { await supabaseClient.from('chats').delete().eq('id', id); loadDashboard(); } }
+
+    async function deleteFriend(id) {
+        if(confirm("هل تريد حذف هذا الصديق نهائياً؟")) {
+            await supabaseClient.from('chats').delete().eq('id', id);
+            loadDashboard();
+        }
+    }
+
+    async function sendChatRequest() {
+        const tid = document.getElementById('target-id').value.toUpperCase();
+        if (tid && tid !== myProfile.display_id) {
+            await supabaseClient.from('chats').insert([{ sender_id: myProfile.display_id, receiver_id: tid }]);
+            alert("تم إرسال الطلب"); toggleModal('add-modal');
+        }
+    }
+
+    async function respond(id) { await supabaseClient.from('chats').update({ status: 'accepted' }).eq('id', id); loadDashboard(); }
     function toggleModal(id) { const m = document.getElementById(id); m.style.display = m.style.display==='flex'?'none':'flex'; }
     async function logout() { await supabaseClient.auth.signOut(); location.reload(); }
 </script>
