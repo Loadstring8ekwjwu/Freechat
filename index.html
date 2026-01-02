@@ -14,100 +14,64 @@
             --bg: #0b141a; --header: #202c33; --sent: #005c4b; --text: #ffffff; --card: #111b21;
         }
 
-        /* هذا الجزء هو الحل: يضبط الطول الحقيقي للشاشة */
         html, body {
-            height: 100dvh; 
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background: var(--card);
-            font-family: -apple-system, system-ui, sans-serif;
+            height: 100dvh; margin: 0; padding: 0; overflow: hidden;
+            background: var(--card); font-family: -apple-system, sans-serif;
         }
 
-        #main-app {
-            display: flex;
-            flex-direction: column;
-            height: 100dvh;
-            width: 100%;
-        }
+        #main-app { display: flex; flex-direction: column; height: 100dvh; width: 100%; position: relative; }
 
-        /* تنسيق الهيدر ليكون متناسقاً */
+        /* الهيدر */
         .header {
-            background: var(--header);
-            color: white;
-            height: 60px;
-            padding-top: env(safe-area-inset-top);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-right: 15px;
-            padding-left: 15px;
-            flex-shrink: 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: var(--header); color: white; height: 60px;
+            padding-top: env(safe-area-inset-top); display: flex;
+            align-items: center; justify-content: space-between;
+            padding-right: 15px; padding-left: 15px; flex-shrink: 0; z-index: 100;
         }
 
-        /* منطقة المحتوى القابلة للتمرير */
+        /* المحتوى */
         .content-area {
-            flex: 1;
-            overflow-y: auto;
-            background: var(--bg);
-            -webkit-overflow-scrolling: touch;
+            flex: 1; overflow-y: auto; background: var(--bg);
+            -webkit-overflow-scrolling: touch; display: flex; flex-direction: column;
         }
 
-        /* شريط الإدخال الثابت في الأسفل */
+        /* شريط الإدخال */
         .input-bar {
-            background: var(--header);
-            padding: 8px 10px;
+            background: var(--header); padding: 8px 10px;
             padding-bottom: calc(8px + env(safe-area-inset-bottom));
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
+            display: flex; align-items: center; gap: 10px; flex-shrink: 0;
         }
 
         #msg-input {
-            flex: 1;
-            height: 42px;
-            border-radius: 21px;
-            border: none;
-            padding: 0 15px;
-            font-size: 16px;
-            outline: none;
+            flex: 1; height: 42px; border-radius: 21px; border: none;
+            padding: 0 15px; font-size: 16px; outline: none; background: white;
         }
 
-        /* العناصر الأخرى */
-        .page {
-            display: none;
-            flex-direction: column;
-            height: 100dvh;
-            width: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background: var(--card);
-        }
-        .active-page { display: flex; }
-
-        .btn { background: none; border: none; color: white; cursor: pointer; font-size: 20px; }
-        .send-btn { background: var(--main); color: white; border: none; width: 42px; height: 42px; border-radius: 50%; font-size: 18px; }
-
-        .friend-item { padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; }
-        .msg { margin: 10px; padding: 10px; border-radius: 10px; max-width: 80%; word-wrap: break-word; color: #000; }
+        /* الرسائل */
+        .msg-list { display: flex; flex-direction: column; padding: 10px; gap: 8px; }
+        .msg { padding: 10px; border-radius: 12px; max-width: 80%; position: relative; color: #000; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .sent { background: var(--sent); align-self: flex-start; }
         .received { background: white; align-self: flex-end; }
-        
-        /* المودال */
+        body.dark .received { background: #202c33; color: white; }
+
+        /* الصفحات */
+        .page { display: none; flex-direction: column; height: 100dvh; width: 100%; position: absolute; top: 0; left: 0; background: var(--card); z-index: 50; }
+        .active-page { display: flex; }
+
+        .btn { background: none; border: none; color: white; cursor: pointer; font-size: 22px; }
+        .send-btn { background: var(--main); color: white; width: 42px; height: 42px; border-radius: 50%; border: none; }
+
+        .friend-item { padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; cursor: pointer; }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-body { background: var(--card); color: var(--text); padding: 20px; border-radius: 15px; width: 85%; max-width: 320px; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="auth-screen" style="position:fixed; inset:0; background:white; z-index:2000; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
-        <h2 style="color:var(--header)">شات الحرية</h2>
-        <input type="email" id="auth-email" placeholder="البريد" style="width:100%; margin:10px 0; padding:12px; border:1px solid #ddd; border-radius:8px;">
+        <h2 style="color:var(--header)">شات الحرية Pro</h2>
+        <input type="email" id="auth-email" placeholder="البريد الإلكتروني" style="width:100%; margin:10px 0; padding:12px; border:1px solid #ddd; border-radius:8px;">
         <input type="password" id="auth-password" placeholder="كلمة المرور" style="width:100%; margin-bottom:20px; padding:12px; border:1px solid #ddd; border-radius:8px;">
-        <button onclick="handleAuth()" style="width:100%; padding:15px; background:var(--main); color:white; border:none; border-radius:8px; font-weight:bold;">دخول</button>
+        <button onclick="handleAuth()" style="width:100%; padding:15px; background:var(--main); color:white; border:none; border-radius:8px; font-weight:bold;">دخول / تسجيل</button>
     </div>
 
     <div id="main-app">
@@ -133,30 +97,30 @@
                 <div style="width:30px;"></div>
             </div>
             <div class="content-area" id="msg-container">
-                <div id="messages-box" style="display:flex; flex-direction:column;"></div>
+                <div id="messages-box" class="msg-list"></div>
             </div>
             <div class="input-bar">
                 <input type="file" id="file-input" style="display:none" onchange="uploadFile(this)">
                 <button class="btn" onclick="document.getElementById('file-input').click()">📎</button>
-                <input type="text" id="msg-input" placeholder="اكتب..." oninput="updateTypingStatus(true)" onblur="updateTypingStatus(false)">
+                <input type="text" id="msg-input" placeholder="اكتب رسالة..." oninput="updateTypingStatus(true)" onblur="updateTypingStatus(false)">
                 <button class="send-btn" onclick="sendMessage()">➤</button>
             </div>
         </div>
     </div>
 
     <div id="profile-modal" class="modal" onclick="if(event.target===this) toggleModal('profile-modal')">
-        <div class="modal-body">
-            <h3>ID الخاص بك</h3>
-            <div id="my-display-id" style="font-size:24px; color:var(--main); margin:15px 0; font-weight:bold;">...</div>
-            <button onclick="logout()" style="width:100%; padding:10px; background:#ff4d4d; color:white; border:none; border-radius:8px;">خروج</button>
+        <div style="background:var(--card); padding:25px; border-radius:20px; width:80%; max-width:320px; text-align:center;">
+            <h3>معرفك الخاص</h3>
+            <div id="my-display-id" style="font-size:24px; color:var(--main); margin:20px 0; font-weight:bold;">...</div>
+            <button onclick="logout()" style="width:100%; padding:12px; background:#ff4d4d; color:white; border:none; border-radius:8px;">خروج</button>
         </div>
     </div>
 
     <div id="add-modal" class="modal" onclick="if(event.target===this) toggleModal('add-modal')">
-        <div class="modal-body">
-            <h3>إضافة صديق</h3>
-            <input type="text" id="target-id" placeholder="ID الصديق" style="width:100%; padding:10px; margin:15px 0; border:1px solid #ddd; border-radius:8px;">
-            <button onclick="sendChatRequest()" style="width:100%; padding:10px; background:var(--main); color:white; border:none; border-radius:8px;">إرسال</button>
+        <div style="background:var(--card); padding:25px; border-radius:20px; width:80%; max-width:320px;">
+            <h3 style="text-align:center; margin-bottom:15px;">إضافة صديق</h3>
+            <input type="text" id="target-id" placeholder="ID الطرف الآخر" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #ddd; border-radius:8px;">
+            <button onclick="sendChatRequest()" style="width:100%; padding:12px; background:var(--main); color:white; border:none; border-radius:8px;">إرسال طلب</button>
         </div>
     </div>
 
@@ -188,15 +152,11 @@
         active?.forEach(f => {
             const other = f.sender_id === myProfile.display_id ? f.receiver_id : f.sender_id;
             const isTyping = f.typing_id === other;
-            fl.innerHTML += `
-                <div class="friend-item" onclick="openChat('${other}', '${f.id}')">
-                    <div style="width:40px;height:40px;background:#ddd;border-radius:50%"></div>
-                    <div style="flex:1">
-                        <b>${other}</b>
-                        <div style="font-size:12px;color:var(--main);display:${isTyping?'block':'none'}">يكتب الآن...</div>
-                    </div>
-                    <button onclick="event.stopPropagation(); deleteFriend('${f.id}')" style="background:none;border:none;">🗑️</button>
-                </div>`;
+            fl.innerHTML += `<div class="friend-item" onclick="openChat('${other}', '${f.id}')">
+                <div style="width:40px;height:40px;background:#ddd;border-radius:50%"></div>
+                <div style="flex:1"><b>${other}</b><div style="font-size:12px;color:var(--main);display:${isTyping?'block':'none'}">يكتب الآن...</div></div>
+                <button onclick="event.stopPropagation(); deleteFriend('${f.id}')" style="background:none;border:none;font-size:20px;">🗑️</button>
+            </div>`;
         });
     }
 
@@ -208,26 +168,30 @@
         if (chatTimer) clearInterval(chatTimer); chatTimer = setInterval(fetchMsgs, 500);
     }
 
-    function closeChat() { 
-        document.getElementById('chat-page').classList.remove('active-page');
-        clearInterval(chatTimer); updateTypingStatus(false);
-    }
+    function closeChat() { document.getElementById('chat-page').classList.remove('active-page'); clearInterval(chatTimer); updateTypingStatus(false); }
 
     async function fetchMsgs() {
         if (!currentFriendID) return;
         const room = [myProfile.display_id, currentFriendID].sort().join('--');
         const { data: msgs } = await supabaseClient.from('messages').select('*').eq('room_id', room).order('created_at', { ascending: true });
+
         if (msgs && msgs.length !== lastCount) {
             const b = document.getElementById('messages-box'); b.innerHTML = '';
             msgs.forEach(m => {
+                const isMine = m.sender_id === myProfile.display_id;
                 const d = document.createElement('div');
-                d.className = `msg ${m.sender_id === myProfile.display_id ? 'sent' : 'received'}`;
-                if (m.text) d.innerText = m.text;
-                if (m.file_url) d.innerHTML += m.file_type==='image' ? `<img src="${m.file_url}" style="width:100%; border-radius:5px; margin-top:5px;">` : `<video src="${m.file_url}" controls style="width:100%; margin-top:5px;"></video>`;
+                d.className = `msg ${isMine ? 'sent' : 'received'}`;
+                let status = isMine ? (m.is_read ? '<span style="color:#34B7F1">✔✔</span>' : '✔') : '';
+                d.innerHTML = `<div>${m.text}</div>`;
+                if(m.file_url) d.innerHTML += m.file_type==='image' ? `<img src="${m.file_url}" style="width:100%; border-radius:8px; margin-top:5px;">` : `<video src="${m.file_url}" controls style="width:100%; margin-top:5px;"></video>`;
+                d.innerHTML += `<div style="text-align:left; font-size:10px; margin-top:3px; opacity:0.6">${status}</div>`;
                 b.appendChild(d);
             });
             lastCount = msgs.length;
             document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
+            
+            // تحديث حالة القراءة للرسائل المستلمة
+            await supabaseClient.from('messages').update({ is_read: true }).eq('room_id', room).neq('sender_id', myProfile.display_id).eq('is_read', false);
         }
         const { data: cData } = await supabaseClient.from('chats').select('typing_id').eq('id', currentChatID).single();
         document.getElementById('typing-indicator').innerText = cData?.typing_id === currentFriendID ? 'يكتب الآن...' : '';
@@ -243,21 +207,33 @@
         }
     }
 
+    async function uploadFile(input) {
+        const file = input.files[0]; if (!file) return;
+        const path = `media/${Date.now()}_${file.name}`;
+        const { data } = await supabaseClient.storage.from('media').upload(path, file);
+        if (data) {
+            const { data: urlData } = supabaseClient.storage.from('media').getPublicUrl(path);
+            const room = [myProfile.display_id, currentFriendID].sort().join('--');
+            await supabaseClient.from('messages').insert([{ room_id: room, sender_id: myProfile.display_id, text: '', file_url: urlData.publicUrl, file_type: file.type.startsWith('image')?'image':'video' }]);
+            fetchMsgs();
+        }
+    }
+
     async function handleAuth() {
         const e = document.getElementById('auth-email').value, p = document.getElementById('auth-password').value;
         const { error } = await supabaseClient.auth.signInWithPassword({ email: e, password: p });
         if (error) await supabaseClient.auth.signUp({ email: e, password: p });
     }
 
-    async function updateTypingStatus(s) { if(currentChatID) await supabaseClient.from('chats').update({ typing_id: s?myProfile.display_id:'' }).eq('id', currentChatID); }
     function toggleDarkMode() { document.body.classList.toggle('dark'); }
     function toggleModal(id) { const m = document.getElementById(id); m.style.display = m.style.display==='flex'?'none':'flex'; }
     async function logout() { await supabaseClient.auth.signOut(); location.reload(); }
-    async function deleteFriend(id) { if(confirm("حذف؟")) { await supabaseClient.from('chats').delete().eq('id', id); loadDashboard(); } }
+    async function updateTypingStatus(s) { if(currentChatID) await supabaseClient.from('chats').update({ typing_id: s?myProfile.display_id:'' }).eq('id', currentChatID); }
+    async function deleteFriend(id) { if(confirm("حذف الصديق؟")) { await supabaseClient.from('chats').delete().eq('id', id); loadDashboard(); } }
     async function sendChatRequest() { 
         const tid = document.getElementById('target-id').value.toUpperCase();
         await supabaseClient.from('chats').insert([{ sender_id: myProfile.display_id, receiver_id: tid }]);
-        toggleModal('add-modal');
+        toggleModal('add-modal'); alert("تم الإرسال");
     }
 </script>
 </body>
