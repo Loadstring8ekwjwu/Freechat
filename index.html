@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>شات الحرية Pro</title>
+    <title>شات الحرية Pro - النسخة الكبيرة</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -17,125 +17,112 @@
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* جعل الجسم يأخذ كامل الشاشة ويمنع السحب */
         body { 
-            font-family: -apple-system, sans-serif; 
-            background: var(--card); 
-            color: var(--text); 
-            height: 100vh; 
-            height: -webkit-fill-available; /* حل لمشكلة Safari */
-            overflow: hidden; 
-            display: flex;
-            flex-direction: column;
+            font-family: -apple-system, system-ui, sans-serif; 
+            background: var(--card); color: var(--text); 
+            height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+            font-size: 18px; /* تكبير الخط العام */
         }
 
-        #main-app { height: 100%; width: 100%; position: relative; flex: 1; display: flex; flex-direction: column; }
-        
-        /* تنسيق الصفحات */
-        .page { 
-            display: flex; 
-            flex-direction: column; 
-            height: 100%; 
-            width: 100%; 
-            position: absolute; 
-            top: 0; 
-            background: var(--card); 
-            z-index: 10;
-        }
-
-        /* الهيدر المطور */
+        /* الهيدر المطور (أكبر) */
         .header { 
-            background: var(--header); 
-            color: white; 
-            padding: calc(env(safe-area-inset-top) + 10px) 15px 10px 15px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            min-height: 60px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            flex-shrink: 0; /* يمنع الهيدر من الانضغاط */
+            background: var(--header); color: white; 
+            padding: calc(env(safe-area-inset-top) + 15px) 20px 15px 20px; 
+            display: flex; align-items: center; justify-content: space-between; 
+            min-height: 80px; /* زيادة الارتفاع */
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            flex-shrink: 0;
+            font-size: 20px;
+            font-weight: bold;
         }
 
-        /* منطقة المحتوى القابلة للتمرير */
-        .content { 
-            flex: 1; 
-            overflow-y: auto; 
-            display: flex; 
-            flex-direction: column;
-            background: var(--bg);
-        }
+        .content { flex: 1; overflow-y: auto; background: var(--bg); }
 
-        /* شريط الإرسال المطور */
+        /* منطقة الإدخال (أضخم لسهولة الكتابة) */
         .input-area { 
             background: var(--header); 
-            padding: 10px 10px calc(env(safe-area-inset-bottom) + 10px) 10px; 
-            display: flex; 
-            gap: 8px; 
-            align-items: center; 
-            flex-shrink: 0; /* يمنع شريط الإدخال من الاختفاء */
+            padding: 15px 15px calc(env(safe-area-inset-bottom) + 15px) 15px; 
+            display: flex; gap: 10px; align-items: center; 
+            flex-shrink: 0;
         }
 
         #msg-input { 
-            flex: 1; 
-            border-radius: 25px; 
-            border: none; 
-            padding: 12px 18px; 
-            font-size: 16px; 
-            outline: none; 
-            background: #fff;
-            color: #000;
+            flex: 1; border-radius: 30px; border: none; 
+            padding: 15px 20px; font-size: 18px; /* تكبير حقل النص */
+            outline: none; background: #fff; color: #000;
         }
 
-        /* الرسائل */
-        #messages-box { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 14px; border-radius: 12px; max-width: 85%; font-size: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: #000; }
-        .sent { background: var(--sent); align-self: flex-start; }
-        .received { background: #ffffff; align-self: flex-end; }
+        /* الرسائل (أوضح وأكبر) */
+        #messages-box { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .msg { 
+            padding: 12px 18px; border-radius: 18px; 
+            max-width: 85%; font-size: 18px; /* تكبير نص الرسائل */
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1); color: #000;
+            line-height: 1.5;
+        }
+        .sent { background: var(--sent); align-self: flex-start; border-top-right-radius: 4px; }
+        .received { background: #ffffff; align-self: flex-end; border-top-left-radius: 4px; }
         body.dark .received { background: #202c33; color: white; }
 
-        /* الأزرار */
-        .btn-round { background: none; border: none; color: white; font-size: 24px; cursor: pointer; min-width: 40px; }
-        .send-btn { background: var(--main); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; color: white; }
-
-        /* الأصدقاء */
-        .friend-item { padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.1); display: flex; align-items: center; gap: 12px; background: var(--card); }
-        .avatar { width: 45px; height: 45px; background: #ccc; border-radius: 50%; flex-shrink: 0; }
+        /* قائمة الأصدقاء (مساحات أوسع) */
+        .friend-item { 
+            padding: 20px; /* زيادة المساحة للنقر */
+            border-bottom: 1px solid rgba(128,128,128,0.1); 
+            display: flex; align-items: center; gap: 15px; 
+            background: var(--card); 
+        }
+        .avatar { width: 60px; height: 60px; background: #ccc; border-radius: 50%; flex-shrink: 0; font-size: 25px; display: flex; align-items: center; justify-content: center;}
         
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .btn-round { background: none; border: none; color: white; font-size: 28px; cursor: pointer; min-width: 50px; }
+        .send-btn { 
+            background: var(--main); width: 55px; height: 55px; /* تكبير زر الإرسال */
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            border: none; color: white; font-size: 24px;
+        }
+
+        /* المودالات والواجهات */
+        .primary-btn { 
+            width: 100%; padding: 18px; background: var(--main); 
+            color: white; border: none; border-radius: 15px; 
+            font-weight: bold; font-size: 18px;
+        }
+        .modal-content { background: var(--card); padding: 30px; border-radius: 25px; width: 90%; max-width: 400px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen" style="position:fixed; inset:0; background:white; z-index:2000; display:none; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
-        <h1 style="color:var(--header)">شات الحرية</h1>
-        <input type="email" id="auth-email" placeholder="البريد الإلكتروني" style="width:100%; padding:15px; margin:10px 0; border:1px solid #ddd; border-radius:10px;">
-        <input type="password" id="auth-password" placeholder="كلمة المرور" style="width:100%; padding:15px; margin-bottom:20px; border:1px solid #ddd; border-radius:10px;">
-        <button onclick="handleAuth()" style="width:100%; padding:15px; background:var(--main); color:white; border:none; border-radius:10px; font-weight:bold;">دخول / تسجيل</button>
+    <div id="auth-screen" style="position:fixed; inset:0; background:white; z-index:2000; display:none; align-items:center; justify-content:center; flex-direction:column; padding:30px;">
+        <h1 style="color:var(--header); font-size: 32px; margin-bottom: 10px;">شات الحرية</h1>
+        <p style="margin-bottom: 30px; color: #666;">نسخة المحترفين</p>
+        <input type="email" id="auth-email" placeholder="البريد الإلكتروني" style="width:100%; padding:18px; margin:10px 0; border:1px solid #ddd; border-radius:15px; font-size: 18px;">
+        <input type="password" id="auth-password" placeholder="كلمة المرور" style="width:100%; padding:18px; margin-bottom:25px; border:1px solid #ddd; border-radius:15px; font-size: 18px;">
+        <button onclick="handleAuth()" class="primary-btn">دخول / تسجيل</button>
     </div>
 
     <div id="main-app">
-        <div id="friends-page" class="page">
+        <div id="friends-page" style="height: 100%; width: 100%; position: absolute; display: flex; flex-direction: column;">
             <div class="header">
                 <button onclick="toggleModal('profile-modal')" class="btn-round">👤</button>
                 <span>شات الحرية</span>
                 <button onclick="toggleDarkMode()" class="btn-round" id="theme-btn">🌙</button>
             </div>
             <div class="content" style="background: var(--card);">
-                <div style="padding: 15px;">
-                    <button onclick="toggleModal('add-modal')" style="width:100%; padding:12px; border-radius:10px; border:none; background:var(--main); color:white; font-weight:bold;">+ إضافة صديق</button>
+                <div style="padding: 20px;">
+                    <button onclick="toggleModal('add-modal')" class="primary-btn">+ إضافة صديق</button>
                 </div>
                 <div id="friends-list"></div>
             </div>
         </div>
 
-        <div id="chat-page" class="page" style="display:none; z-index:20;">
+        <div id="chat-page" style="display:none; height: 100%; width: 100%; position: absolute; flex-direction: column; z-index: 20;">
             <div class="header">
                 <button onclick="closeChat()" class="btn-round">❮</button>
                 <div style="text-align:center;">
-                    <div id="chat-title" style="font-weight:bold;">...</div>
-                    <div id="typing-indicator" style="font-size:11px; color:#cfc;"></div>
+                    <div id="chat-title">...</div>
+                    <div id="typing-indicator" style="font-size:14px; color:#cfc; height:18px;"></div>
                 </div>
-                <div style="width:40px;"></div> </div>
+                <div style="width:50px;"></div>
+            </div>
             <div class="content" id="messages-container">
                 <div id="messages-box"></div>
             </div>
@@ -148,19 +135,19 @@
         </div>
     </div>
 
-    <div id="profile-modal" class="modal" onclick="if(event.target===this) toggleModal('profile-modal')">
-        <div style="background:var(--card); padding:25px; border-radius:20px; width:100%; max-width:320px; text-align:center;">
-            <h3>هويتك الرقمية</h3>
-            <div id="my-display-id" style="font-size:24px; font-weight:bold; color:var(--main); margin:20px 0;">...</div>
-            <button onclick="logout()" style="width:100%; padding:12px; background:#ff4d4d; color:white; border:none; border-radius:10px;">خروج</button>
+    <div id="profile-modal" class="modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:1000;" onclick="if(event.target===this) toggleModal('profile-modal')">
+        <div class="modal-content">
+            <h3 style="font-size: 24px;">هويتك الرقمية</h3>
+            <div id="my-display-id" style="font-size:32px; font-weight:bold; color:var(--main); margin:25px 0;">...</div>
+            <button onclick="logout()" style="width:100%; padding:15px; background:#ff4d4d; color:white; border:none; border-radius:15px; font-weight:bold;">خروج</button>
         </div>
     </div>
 
-    <div id="add-modal" class="modal" onclick="if(event.target===this) toggleModal('add-modal')">
-        <div style="background:var(--card); padding:25px; border-radius:20px; width:100%; max-width:320px;">
-            <h3 style="margin-bottom:15px; text-align:center;">إضافة صديق</h3>
-            <input type="text" id="target-id" placeholder="ID الصديق" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:10px; margin-bottom:15px;">
-            <button onclick="sendChatRequest()" style="width:100%; padding:12px; background:var(--main); color:white; border:none; border-radius:10px;">إرسال الطلب</button>
+    <div id="add-modal" class="modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:1000;" onclick="if(event.target===this) toggleModal('add-modal')">
+        <div class="modal-content">
+            <h3 style="margin-bottom:20px;">إضافة صديق</h3>
+            <input type="text" id="target-id" placeholder="ID الصديق" style="width:100%; padding:15px; border:1px solid #ddd; border-radius:15px; margin-bottom:20px; font-size: 18px;">
+            <button onclick="sendChatRequest()" class="primary-btn">إرسال الطلب</button>
         </div>
     </div>
 
@@ -194,15 +181,18 @@
         active?.forEach(f => {
             const other = f.sender_id === myProfile.display_id ? f.receiver_id : f.sender_id;
             const isTyping = f.typing_id === other;
-            fl.innerHTML += `
-                <div class="friend-item" onclick="openChat('${other}', '${f.id}')">
-                    <div class="avatar"></div>
-                    <div style="flex:1">
-                        <div style="font-weight:bold;">${other}</div>
-                        <div style="font-size:12px; color:var(--main); display:${isTyping?'block':'none'}">يكتب الآن...</div>
-                    </div>
-                    <button onclick="event.stopPropagation(); deleteFriend('${f.id}')" style="background:none; border:none; color:red; font-size:20px;">🗑️</button>
-                </div>`;
+            const div = document.createElement('div');
+            div.className = 'friend-item';
+            div.innerHTML = `
+                <div class="avatar">👤</div>
+                <div style="flex:1">
+                    <div style="font-weight:bold; font-size: 20px;">${other}</div>
+                    <div style="font-size:14px; color:var(--main); display:${isTyping?'block':'none'}">يكتب الآن...</div>
+                </div>
+                <button onclick="event.stopPropagation(); deleteFriend('${f.id}')" style="background:none; border:none; color:red; font-size:28px;">🗑️</button>
+            `;
+            div.onclick = () => openChat(other, f.id);
+            fl.appendChild(div);
         });
     }
 
@@ -234,8 +224,9 @@
                 d.className = `msg ${m.sender_id === myProfile.display_id ? 'sent' : 'received'}`;
                 if (m.text) d.innerHTML += `<div>${m.text}</div>`;
                 if (m.file_url) {
-                    if (m.file_type === 'image') d.innerHTML += `<img src="${m.file_url}" style="width:100%; border-radius:8px; margin-top:5px;">`;
-                    else d.innerHTML += `<video src="${m.file_url}" controls style="width:100%; border-radius:8px; margin-top:5px;"></video>`;
+                    const tag = m.file_type === 'image' ? 'img' : 'video';
+                    const attr = m.file_type === 'image' ? '' : 'controls';
+                    d.innerHTML += `<${tag} src="${m.file_url}" ${attr} style="width:100%; border-radius:12px; margin-top:8px;"></${tag}>`;
                 }
                 b.appendChild(d);
             });
@@ -285,8 +276,10 @@
     async function deleteFriend(id) { if(confirm("حذف الصديق؟")) { await supabaseClient.from('chats').delete().eq('id', id); loadDashboard(); } }
     async function sendChatRequest() { 
         const tid = document.getElementById('target-id').value.toUpperCase();
-        await supabaseClient.from('chats').insert([{ sender_id: myProfile.display_id, receiver_id: tid }]);
-        toggleModal('add-modal'); alert("تم الإرسال");
+        if(tid) {
+            await supabaseClient.from('chats').insert([{ sender_id: myProfile.display_id, receiver_id: tid }]);
+            toggleModal('add-modal'); alert("تم الإرسال");
+        }
     }
     function toggleModal(id) { const m = document.getElementById(id); m.style.display = m.style.display==='flex'?'none':'flex'; }
     async function logout() { await supabaseClient.auth.signOut(); location.reload(); }
